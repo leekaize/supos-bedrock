@@ -43,9 +43,9 @@
 ### Morning Checkpoint
 **Goal:** EMQX integration
 **Tasks:**
-1. [ ] Add EMQX to services/docker-compose.yml
-2. [ ] Update master/app.py status route
-3. [ ] Verify MQTT pub/sub from terminal
+1. [x] Add EMQX to services/docker-compose.yml
+2. [x] Update master/app.py status route
+3. [x] Verify MQTT pub/sub from terminal
 
 ### Evening Log
 **Completed:**

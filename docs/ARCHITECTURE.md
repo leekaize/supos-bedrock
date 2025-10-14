@@ -1,6 +1,15 @@
 # supOS Bedrock - Architecture
 
-**Status:** Day 1 validated - Master orchestration pattern proven
+## Day 2: EMQX Integration
+
+Master container → EMQX (port 1883) → Services network.
+
+MQTT broker handles:
+- Node-RED connections
+- supOS backend pub/sub
+- External device streams
+
+Test: `mosquitto_pub -h localhost -t test/topic -m "test"`
 
 ## Pattern: Nextcloud AIO Simplified
 
@@ -8,13 +17,13 @@ Master container orchestrates service containers via Docker socket[^docker-socke
 
 [^docker-socket]: `/var/run/docker.sock` gives container access to host Docker daemon. Security trade: convenience vs. isolation. Acceptable for single-node deployments.
 
-## Structure (Day 1)
+## Structure
 
 ```
 supos-bedrock/
 ├── docker-compose.yml        # Master only
 ├── services/
-│   └── docker-compose.yml    # Postgres (proof of concept)
+│   └── docker-compose.yml    # Services
 ├── master/
 │   ├── Dockerfile            # Python 3.12 + Docker CLI
 │   ├── app.py                # Flask orchestrator (71 lines)
@@ -71,14 +80,6 @@ Button click → POST request → Flask → Docker Compose CLI → Services star
 - Docker socket = elevated privilege
 - Not Kubernetes-scale (acceptable for supOS)
 - Single-node only (MVP scope)
-
-## Phase 2 Expansions (Out of Scope Day 1)
-
-- Add EMQX, Node-RED, Kong, Keycloak
-- HTTPS/SSL certificates (Let's Encrypt)
-- Backup/restore functionality
-- Health check orchestration
-- Multi-node? (Requires Swarm/K8s)
 
 ## Security Notes
 

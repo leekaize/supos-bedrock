@@ -23,6 +23,8 @@ def get_status():
         
         # Get service containers
         services = []
+        
+        # Postgres
         try:
             postgres = client.containers.get("supos-postgres")
             services.append({
@@ -33,6 +35,21 @@ def get_status():
         except docker.errors.NotFound:
             services.append({
                 "name": "postgres",
+                "status": "not_started",
+                "health": "unknown"
+            })
+        
+        # EMQX
+        try:
+            emqx = client.containers.get("supos-emqx")
+            services.append({
+                "name": "emqx",
+                "status": emqx.status,
+                "health": "healthy" if emqx.status == "running" else "unhealthy"
+            })
+        except docker.errors.NotFound:
+            services.append({
+                "name": "emqx",
                 "status": "not_started",
                 "health": "unknown"
             })

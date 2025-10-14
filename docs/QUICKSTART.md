@@ -52,9 +52,6 @@ Expected: PostgreSQL version prints.
 - [x] Postgres starts via UI
 - [x] Postgres responds to queries
 
-## Next Steps (Day 2)
-Add EMQX container to services stack.
-
 ## Troubleshooting
 
 **Port 8080 in use:**
@@ -72,5 +69,25 @@ sudo usermod -aG docker $USER
 **Master build fails:**
 Check Docker has internet access for pulling Python image.
 
----
-**Status:** Day 1 complete. Baseline established.
+## Day 2: EMQX + MQTT
+
+### Start Services
+
+Click "Start Services" in UI.
+
+Expected: postgres + emqx both "running".
+
+### Test MQTT
+
+Terminal:
+\`\`\`bash
+mosquitto_pub -h localhost -t test -m "hello"
+mosquitto_sub -h localhost -t test
+\`\`\`
+
+### EMQX Dashboard
+
+URL: http://localhost:18083  
+Login: admin / public
+
+Expected: Shows 0 clients. Publish/subscribe works.

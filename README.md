@@ -51,7 +51,7 @@ See [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for pattern details.
 
 ### Phase 1: Core Orchestration (Days 1-7)
 - [x] Day 1: Master container + Postgres
-- [ ] Day 2: Add EMQX (MQTT broker)
+- [x] Day 2: Add EMQX (MQTT broker)
 - [ ] Day 3: Add Node-RED (flow integration)
 - [ ] Day 4: Add Kong/Konga (API gateway)
 - [ ] Day 5: Add Keycloak (authentication)
