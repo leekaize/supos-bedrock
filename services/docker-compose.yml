@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: supos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-supos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-supos}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - supos-bedrock
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supos}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  supos-bedrock:
+    external: true
+
+volumes:
+  postgres_data:
+    name: supos_postgres_data

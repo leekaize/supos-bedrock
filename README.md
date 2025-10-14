@@ -1,220 +1,152 @@
 # supOS Bedrock
 
-**Industry-grade deployment orchestration for supOS platform.**
+Deployment orchestration for supOS platform. One command. Web UI. Inspired by Nextcloud AIO simplicity.
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/status-development-yellow.svg)]()
+**Phase:** Active Development (Day 1 in progress)
 
 ## Overview
 
-supOS Bedrock makes deploying supOS as easy as running a single container. Web-based management. Automatic health checks. Built-in backup/restore.
+supOS-CE uses bash scripts + manual docker-compose. Fragile. Hard for users.
 
-**Current deployment:** Bash scripts + manual docker-compose  
-**Bedrock:** One command. Web UI. Enterprise reliability.
+supOS Bedrock changes that. One command deploys supOS. Web UI manages lifecycle.
 
-**Inspired by:** Nextcloud All-in-One
+**Core Pattern:** Master container orchestrates services via Docker socket[^docker-socket].
 
----
-
-## Features
-
-✅ **One-Command Deployment**
-```bash
-docker run -d --name supos-bedrock \
-  -p 8080:8080 \
-  -v supos_bedrock_data:/data \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  ghcr.io/leekaize/supos-bedrock:latest
-```
-
-✅ **Web-Based Management**
-- Service status dashboard
-- Start/stop/restart controls
-- Real-time logs
-- Health monitoring
-
-✅ **Lifecycle Automation**
-- Automatic health checks
-- Auto-restart on failure
-- Version management
-- Backup/restore via UI
-
-✅ **Enterprise Reliability**
-- Container orchestration
-- Dependency management
-- Graceful shutdowns
-- Update rollback
-
----
+[^docker-socket]: `/var/run/docker.sock` gives container access to host Docker daemon. Read-only mount limits risk.
 
 ## Quick Start
 
-**Prerequisites:**
-- Docker installed
-- 4GB RAM minimum (8GB recommended)
-- 20GB disk space
-
-**Deploy:**
 ```bash
-docker run -d \
-  --name supos-bedrock \
-  -p 8080:8080 \
-  -v supos_bedrock_data:/data \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  ghcr.io/leekaize/supos-bedrock:latest
+# 1. Clone
+git clone https://github.com/leekaize/supos-bedrock
+cd supos-bedrock
+
+# 2. Configure
+cp .env.example .env
+nano .env  # Change POSTGRES_PASSWORD
+
+# 3. Start
+docker compose up -d --build
+
+# 4. Verify
+curl http://localhost:8080  # Should return HTML
+open http://localhost:8080
 ```
 
-**Access:** https://localhost:8080
-
-**First run:**
-1. Copy generated admin password from logs
-2. Complete setup wizard
-3. Click "Deploy supOS"
-4. Wait 5-10 minutes
-5. Access supOS at provided URL
-
-Full instructions: [QUICKSTART.md](docs/guides/QUICKSTART.md)
-
----
+See [QUICKSTART.md](docs/guides/QUICKSTART.md) for detailed setup.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────┐
-│   supOS Bedrock Master Container    │
-│                                     │
-│  ┌──────────────┐  ┌─────────────┐ │
-│  │  Web UI      │  │ Orchestrator│ │
-│  │  (Flask)     │  │  (Python)   │ │
-│  └──────────────┘  └─────────────┘ │
-│           │              │          │
-│           └──────┬───────┘          │
-│                  │                  │
-│         Docker Socket Access        │
-└──────────────────┼──────────────────┘
-                   │
-    ┌──────────────┼──────────────┐
-    │              │              │
-┌───▼───┐    ┌────▼────┐    ┌───▼────┐
-│ supOS │    │Database │    │ Redis  │
-│Backend│    │(Postgres│    │ Cache  │
-└───────┘    └─────────┘    └────────┘
+Master Container (Flask + Docker SDK)
+    ↓
+Docker Socket
+    ↓
+Service Stack (Postgres, EMQX, Node-RED...)
 ```
 
-**Master orchestrates all services via Docker API.**
+See [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for pattern details.
 
----
+## Roadmap
 
-## Components
+### Phase 1: Core Orchestration (Days 1-7)
+- [x] Day 1: Master container + Postgres
+- [ ] Day 2: Add EMQX (MQTT broker)
+- [ ] Day 3: Add Node-RED (flow integration)
+- [ ] Day 4: Add Kong/Konga (API gateway)
+- [ ] Day 5: Add Keycloak (authentication)
+- [ ] Day 6: Service health checks
+- [ ] Day 7: Integration testing
 
-### Master Container
-- **Orchestrator:** Python service managing container lifecycle
-- **Web UI:** Management interface (Flask)
-- **Health Monitor:** Automatic failure detection
-- **Backup Manager:** Volume export/import
+### Phase 2: Production Features (Days 8-14)
+- [ ] Day 8: HTTPS/SSL certificates
+- [ ] Day 9: Backup/restore UI
+- [ ] Day 10: Configuration validation
+- [ ] Day 11: Service logs in UI
+- [ ] Day 12: Documentation polish
+- [ ] Day 13: Demo video
+- [ ] Day 14: Hackathon submission
 
-### Managed Services
-- supOS Backend
-- supOS Frontend
-- PostgreSQL database
-- Redis cache
-- [Additional services from compose]
+### Phase 3: Future (Post-Hackathon)
+- Custom CoreOS images
+- Advanced backup systems
+- Multi-node orchestration
 
----
+## Project Structure
 
-## Project Status
-
-**Phase:** Development (Day 1)
-
-**Roadmap:**
-- [x] Project structure
-- [ ] Master container framework
-- [ ] Service orchestration
-- [ ] Web UI implementation
-- [ ] Health check system
-- [ ] Backup/restore functionality
-- [ ] Documentation
-
-**Target:** supOS Global Hackathon 2025 submission
-
----
-
-## Development
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions.
-
-**Structure:**
 ```
 supos-bedrock/
-├── master-container/    # Orchestration container
-├── coreos-image/        # (Phase 2) Fedora CoreOS
-├── docs/                # Documentation
-└── tests/               # Test suites
+├── CHECKPOINT.md              # Daily progress tracking
+├── docker-compose.yml         # Master container
+├── services/
+│   └── docker-compose.yml    # Service stack
+├── master/
+│   ├── Dockerfile
+│   ├── app.py                # Flask orchestrator
+│   └── templates/
+├── docs/
+│   ├── guides/               # User documentation
+│   │   └── QUICKSTART.md
+│   └── architecture/         # Technical specs
+│       └── ARCHITECTURE.md
+└── .env.example
 ```
 
----
+## Daily Workflow
 
-## Comparison
+**Morning (5 min):**
+- Update CHECKPOINT.md: Goal + 3 tasks
 
-| Feature | Current Scripts | Bedrock |
-|---------|----------------|---------|
-| Installation | System-level | Containerised |
-| Management | CLI only | Web UI |
-| Health checks | None | Automatic |
-| Backup | Manual | Built-in |
-| Updates | Risky | Automated |
-| Monitoring | External tools | Integrated |
+**Work (4 hours):**
+- Ship code
+- Ask when blocked >30 min
 
----
+**Evening (10 min):**
+- Log: Completed + blockers + tomorrow's priority
+- Commit with hash
+
+See [CHECKPOINT.md](CHECKPOINT.md) for daily logs.
+
+## Target
+
+**supOS Global Hackathon 2025**
+- 14-day sprint (4 hours/day)
+- 56 hours total
+- Submission deadline: 2025-10-31
+
+## Success Metrics
+
+- [ ] One-command deployment works
+- [ ] Web UI shows service status
+- [ ] Basic lifecycle controls (start/stop/restart)
+- [ ] Documentation complete
+- [ ] Demo video recorded
+- [ ] Hackathon submission ready
 
 ## Contributing
 
-**We welcome:**
-- Orchestration improvements
-- UI enhancements
-- Documentation
-- Testing
-
-**Development setup:**
-```bash
-git clone https://github.com/leekaize/supos-bedrock.git
-cd supos-bedrock
-# See CONTRIBUTING.md for details
-```
-
----
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 
 ## License
 
 Apache-2.0 - See [LICENSE](LICENSE)
-
----
 
 ## Citation
 
 ```bibtex
 @misc{supos-bedrock,
   author = {Lee Kai Ze},
-  title = {supOS Bedrock: Industry-Grade Deployment Orchestration},
+  title = {supOS Bedrock: Deployment Orchestration for supOS Platform},
   year = {2025},
   publisher = {GitHub},
   url = {https://github.com/leekaize/supos-bedrock}
 }
 ```
 
----
-
-## References
-
-**Baseline:** Nextcloud All-in-One - https://github.com/nextcloud/all-in-one  
-**Target:** supOS Platform - https://github.com/FREEZONEX/2025_supOS_Global_Hackathon
-
----
-
 ## Contact
 
-- **Issues:** Bug reports and features
-- **Discussions:** Architecture and deployment questions
-- **Email:** mail@leekaize.com
+- Issues: Bug reports and feature requests
+- Discussions: Architecture questions
+- Email: mail@leekaize.com
 
-**Built for:** Industrial IoT deployments, edge computing, production supOS installations
+Built for: supOS Global Hackathon 2025

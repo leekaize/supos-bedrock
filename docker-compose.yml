@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  supos-bedrock-master:
+    build: ./master
+    container_name: supos-bedrock-master
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - bedrock_master_config:/app/config
+    environment:
+      - FLASK_ENV=production
+      - SERVICES_COMPOSE_PATH=/services/docker-compose.yml
+    networks:
+      - bedrock-network
+
+networks:
+  bedrock-network:
+    name: supos-bedrock
+    driver: bridge
+
+volumes:
+  bedrock_master_config:
+    name: supos_bedrock_master_config

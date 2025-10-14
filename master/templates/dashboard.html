@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>supOS Bedrock</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f1419;
+            color: #e6edf3;
+            padding: 2rem;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .subtitle { color: #7d8590; margin-bottom: 2rem; }
+        .card { 
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .status { 
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .status.running { background: #238636; color: #fff; }
+        .status.stopped { background: #da3633; color: #fff; }
+        .status.unknown { background: #6e7681; color: #fff; }
+        .controls { display: flex; gap: 1rem; margin-top: 1rem; }
+        button {
+            background: #238636;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2ea043; }
+        button.danger { background: #da3633; }
+        button.danger:hover { background: #e5534b; }
+        .service-list { margin-top: 1rem; }
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #0d1117;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>supOS Bedrock</h1>
+        <p class="subtitle">Deployment orchestration for supOS platform</p>
+
+        <div class="card">
+            <h2>Master Container</h2>
+            <p>Status: <span class="status running" id="master-status">Running</span></p>
+        </div>
+
+        <div class="card">
+            <h2>Services</h2>
+            <div class="service-list" id="services">
+                <p>Loading...</p>
+            </div>
+            <div class="controls">
+                <button onclick="startServices()">Start Services</button>
+                <button class="danger" onclick="stopServices()">Stop Services</button>
+                <button onclick="refreshStatus()">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function refreshStatus() {
+            const res = await fetch('/api/status');
+            const data = await res.json();
+            
+            const servicesList = document.getElementById('services');
+            servicesList.innerHTML = data.services.map(s => `
+                <div class="service-item">
+                    <span><strong>${s.name}</strong></span>
+                    <span class="status ${s.status === 'running' ? 'running' : 'stopped'}">
+                        ${s.status}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        async function startServices() {
+            await fetch('/api/services/start', { method: 'POST' });
+            setTimeout(refreshStatus, 2000);
+        }
+
+        async function stopServices() {
+            await fetch('/api/services/stop', { method: 'POST' });
+            setTimeout(refreshStatus, 2000);
+        }
+
+        refreshStatus();
+        setInterval(refreshStatus, 5000);
+    </script>
+</body>
+</html>
