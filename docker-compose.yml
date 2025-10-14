@@ -10,6 +10,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - bedrock_master_config:/app/config
+      - ./services:/services:ro
     environment:
       - FLASK_ENV=production
       - SERVICES_COMPOSE_PATH=/services/docker-compose.yml

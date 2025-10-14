@@ -6,7 +6,7 @@ app = Flask(__name__)
 client = docker.from_env()
 
 SERVICES_PROJECT = "supos-services"
-SERVICES_COMPOSE = os.path.abspath("../services/docker-compose.yml")
+SERVICES_COMPOSE = "/services/docker-compose.yml"
 
 @app.route("/")
 def dashboard():
@@ -48,8 +48,8 @@ def get_status():
 def start_services():
     """Start service stack using docker compose"""
     try:
-        # Use docker compose command
-        os.system(f"cd ../services && docker compose up -d")
+        # Use docker-compose command
+        os.system(f"cd /services && docker-compose up -d")
         return jsonify({"message": "Services starting"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -58,7 +58,7 @@ def start_services():
 def stop_services():
     """Stop service stack"""
     try:
-        os.system(f"cd ../services && docker compose down")
+        os.system(f"cd /services && docker-compose down")
         return jsonify({"message": "Services stopped"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

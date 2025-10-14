@@ -2,11 +2,16 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install Docker CLI and Docker Compose
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    docker.io \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends curl && \
+    curl -fsSL https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose && \
+    chmod +x /usr/local/bin/docker-compose && \
+    curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-24.0.7.tgz && \
+    tar xzvf docker-24.0.7.tgz --strip 1 -C /usr/local/bin docker/docker && \
+    rm docker-24.0.7.tgz && \
+    apt-get purge -y curl && apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt .
