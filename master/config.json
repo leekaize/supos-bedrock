@@ -1,0 +1,109 @@
+{
+  "setup_complete": false,
+  "admin": {
+    "username": "",
+    "email": "",
+    "password_hash": ""
+  },
+  
+  "system": {
+    "platform_type": "linux",
+    "resource_spec": "4c8g",
+    "name": "supOS-CE",
+    "version": "V1.1.0.0-M",
+    "volumes_path": "/volumes/supos/data"
+  },
+  
+  "network": {
+    "protocol": "http",
+    "domain": "",
+    "port": 8088
+  },
+  
+  "localization": {
+    "language": "en-US"
+  },
+  
+  "mqtt": {
+    "tcp_port": 1883,
+    "websocket_tls_port": 8084,
+    "use_alias_as_topic": false
+  },
+  
+  "authentication": {
+    "enabled": true,
+    "login_path": "/supos-login",
+    "oauth": {
+      "realm": "supos",
+      "client_name": "supos",
+      "client_id": "supos",
+      "client_secret": "VaOS2makbDhJJsLlYPt4Wl87bo9VzXiO",
+      "grant_type": "authorization_code",
+      "issuer_uri": "http://keycloak:8080",
+      "refresh_token_time": 60
+    }
+  },
+  
+  "llm": {
+    "type": "ollama",
+    "openai_api_key": "",
+    "openai_api_model": "gpt-4o",
+    "langsmith_api_key": ""
+  },
+  
+  "ldap": {
+    "enabled": false,
+    "url": "",
+    "sync_user_enabled": false
+  },
+  
+  "services": {
+    "postgres": {
+      "password": "postgres"
+    },
+    "keycloak": {
+      "admin_username": "admin",
+      "admin_password": "supos"
+    },
+    "emqx": {
+      "admin_username": "admin",
+      "admin_password": "public",
+      "node_cookie": "secretcookie"
+    },
+    "minio": {
+      "access_key": "admin",
+      "secret_key": "adminpassword"
+    },
+    "portainer": {
+      "admin_password_hash": "$2y$05$ZTAqF7Tn.hil8X.ifVmQTuKiJQoZDiKDW3t1lRR2/VPR06QoHv4AC"
+    },
+    "grafana": {
+      "admin_password": "supos"
+    },
+    "kong": {
+      "db_password": "postgres"
+    }
+  },
+  
+  "mcp": {
+    "enabled": false,
+    "deployment_url": "http://mcpclient:8123",
+    "supos_api_key": "4174348a-9222-4e81-b33e-5d72d2fd7f1e"
+  },
+  
+  "elasticsearch": {
+    "version": "7.10.2",
+    "timehorizon_days": 60
+  },
+  
+  "features": {
+    "lazy_tree": false,
+    "chat2db_enabled": true
+  },
+  
+  "update_check": {
+    "enabled": true,
+    "interval_hours": 6,
+    "last_check": null
+  }
+}

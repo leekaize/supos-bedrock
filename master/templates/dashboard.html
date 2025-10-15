@@ -3,109 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>supOS Bedrock</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f1419;
-            color: #e6edf3;
-            padding: 2rem;
-        }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-        .subtitle { color: #7d8590; margin-bottom: 2rem; }
-        .card { 
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        .status { 
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-        .status.running { background: #238636; color: #fff; }
-        .status.stopped { background: #da3633; color: #fff; }
-        .status.unknown { background: #6e7681; color: #fff; }
-        .controls { display: flex; gap: 1rem; margin-top: 1rem; }
-        button {
-            background: #238636;
-            color: #fff;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button:hover { background: #2ea043; }
-        button.danger { background: #da3633; }
-        button.danger:hover { background: #e5534b; }
-        .service-list { margin-top: 1rem; }
-        .service-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem;
-            background: #0d1117;
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
-        }
-    </style>
+    <title>supOS Bedrock - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>supOS Bedrock</h1>
-        <p class="subtitle">Deployment orchestration for supOS platform</p>
-
-        <div class="card">
-            <h2>Master Container</h2>
-            <p>Status: <span class="status running" id="master-status">Running</span></p>
-        </div>
-
-        <div class="card">
-            <h2>Services</h2>
-            <div class="service-list" id="services">
-                <p>Loading...</p>
+<body class="bg-gray-50">
+    <div class="min-h-screen p-4">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">supOS Bedrock</h1>
+                <p class="text-gray-600 mt-1">Deployment orchestration dashboard</p>
             </div>
-            <div class="controls">
-                <button onclick="startServices()">Start Services</button>
-                <button class="danger" onclick="stopServices()">Stop Services</button>
-                <button onclick="refreshStatus()">Refresh</button>
+
+            <!-- Master Container Status -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-2">Master Container</h2>
+                        <p class="text-gray-600">Orchestration control plane</p>
+                    </div>
+                    <span id="master-status" class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                        Running
+                    </span>
+                </div>
+            </div>
+
+            <!-- Services Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Service Stack</h2>
+                    <button onclick="refreshStatus()" class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Services List -->
+                <div id="services" class="space-y-3 mb-6">
+                    <div class="flex items-center justify-center py-8 text-gray-500">
+                        <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading services...
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                    <button onclick="startServices()" class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 font-semibold transition-colors">
+                        Start Services
+                    </button>
+                    <button onclick="stopServices()" class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 font-semibold transition-colors">
+                        Stop Services
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer Info -->
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>Auto-refresh every 5 seconds</p>
             </div>
         </div>
     </div>
 
     <script>
         async function refreshStatus() {
-            const res = await fetch('/api/status');
-            const data = await res.json();
-            
-            const servicesList = document.getElementById('services');
-            servicesList.innerHTML = data.services.map(s => `
-                <div class="service-item">
-                    <span><strong>${s.name}</strong></span>
-                    <span class="status ${s.status === 'running' ? 'running' : 'stopped'}">
-                        ${s.status}
-                    </span>
-                </div>
-            `).join('');
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                // Update services list
+                const servicesList = document.getElementById('services');
+                servicesList.innerHTML = data.services.map(service => {
+                    const isRunning = service.status === 'running';
+                    const statusColor = isRunning ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+                    const iconColor = isRunning ? 'text-green-600' : 'text-gray-400';
+                    
+                    return `
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 ${isRunning ? 'bg-green-100' : 'bg-gray-100'} rounded-full flex items-center justify-center">
+                                    <svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 capitalize">${service.name}</p>
+                                    <p class="text-sm text-gray-600">${service.health}</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 ${statusColor} rounded-full text-sm font-semibold capitalize">
+                                ${service.status.replace('_', ' ')}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Failed to refresh status:', error);
+                document.getElementById('services').innerHTML = `
+                    <div class="flex items-center justify-center py-8 text-red-600">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                        Failed to load services
+                    </div>
+                `;
+            }
         }
 
         async function startServices() {
-            await fetch('/api/services/start', { method: 'POST' });
-            setTimeout(refreshStatus, 2000);
+            try {
+                await fetch('/api/services/start', { method: 'POST' });
+                setTimeout(refreshStatus, 2000);
+            } catch (error) {
+                console.error('Failed to start services:', error);
+                alert('Failed to start services. Check logs.');
+            }
         }
 
         async function stopServices() {
-            await fetch('/api/services/stop', { method: 'POST' });
-            setTimeout(refreshStatus, 2000);
+            if (!confirm('Stop all services?')) return;
+            
+            try {
+                await fetch('/api/services/stop', { method: 'POST' });
+                setTimeout(refreshStatus, 2000);
+            } catch (error) {
+                console.error('Failed to stop services:', error);
+                alert('Failed to stop services. Check logs.');
+            }
         }
 
+        // Initial load and auto-refresh
         refreshStatus();
         setInterval(refreshStatus, 5000);
     </script>

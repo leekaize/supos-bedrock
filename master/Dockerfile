@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY app.py .
+COPY setup_wizard.py .
 COPY templates templates/
 
 # Create config directory
