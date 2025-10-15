@@ -32,20 +32,50 @@
 - Revise philosophy, make sure able to see notification at supOS front-end that the master-container or any other container has recommended update.
 
 **Commit:**
-```
-#8568e1d
-```
+- #8568e1d
 
 ---
 
 ## Day 2 - 2025-10-14 (Tue)
 
-### Morning Checkpoint
+### Morning Checkpoint (0800)
 **Goal:** EMQX integration
 **Tasks:**
 1. [x] Add EMQX to services/docker-compose.yml
 2. [x] Update master/app.py status route
 3. [x] Verify MQTT pub/sub from terminal
+
+### Evening Log (1200)
+**Completed:**
+- EMQX container integrated into services stack
+- Master UI now shows EMQX status alongside Postgres
+- MQTT pub/sub verified via terminal (mosquitto_pub/sub)
+- EMQX dashboard accessible at localhost:18083
+- Network communication confirmed between services
+- Architecture document updated with MQTT integration details
+
+**Blockers:**
+- None
+
+**Tomorrow Priority:**
+- Implement update notification system for containers
+- Add first-run setup wizard for user creation
+- Refactor master UI to show update availability status
+
+**Commit:**
+- cff3f76a45757ea0bed564ed91eb13da3cd4e6ea
+- ad43bf8d2b9a3b020f10ea9bf122fb67f0593e1e
+
+---
+
+## Day 3 - 2025-10-15 (Wed)
+
+### Morning Checkpoint (0800)
+**Goal:** Update notifications + first-run setup
+**Tasks:**
+1. [ ] Add image version checker to master/app.py
+2. [ ] Create first-run setup wizard (user creation UI)
+3. [ ] Add update notification banner to dashboard
 
 ### Evening Log
 **Completed:**
@@ -80,9 +110,7 @@ Copy for each day:
 - 
 
 **Commit:**
-```
-
----
+-
 
 **Phase Completion Criteria:**
 - [ ] Day 14: One-command deployment works
