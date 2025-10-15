@@ -1,39 +1,80 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: supos-postgres
+  # ==================== DATABASE LAYER ====================
+  
+  postgresql:
+    image: timescale/timescaledb:2.20.0-pg17
+    container_name: supos-postgresql
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-supos}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: ${POSTGRES_DB:-supos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: UTC
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ${VOLUMES_PATH}/postgresql/pgdata:/var/lib/postgresql/data
+      - ${VOLUMES_PATH}/postgresql/conf/postgresql.conf:/etc/postgresql/custom.conf
+      - ${VOLUMES_PATH}/postgresql/init-scripts:/docker-entrypoint-initdb.d
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/custom.conf
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U postgres -d keycloak -c '\\dt public.initialization_complete' | grep -q 'initialization_complete'"]
+      interval: 15s
+      timeout: 15s
+      retries: 15
+      start_period: 120s
+      start_interval: 10s
     networks:
       - supos-bedrock
+
+  tsdb:
+    image: timescale/timescaledb:2.20.0-pg17
+    container_name: supos-tsdb
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: UTC
+    ports:
+      - "2345:5432"
+    volumes:
+      - ${VOLUMES_PATH}/tsdb/data:/var/lib/postgresql/data
+      - ${VOLUMES_PATH}/tsdb/conf/postgresql.conf:/etc/postgresql/custom.conf
+      - ${VOLUMES_PATH}/tsdb/init-scripts:/docker-entrypoint-initdb.d
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/custom.conf
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supos}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
+    networks:
+      - supos-bedrock
+
+  # ==================== MQTT LAYER ====================
 
   emqx:
-    image: emqx/emqx:5.4.0
+    image: emqx/emqx:5.8
     container_name: supos-emqx
     restart: unless-stopped
     environment:
-      EMQX_NAME: supos
-      EMQX_HOST: 127.0.0.1
-      EMQX_NODE__COOKIE: supos_secret_cookie
+      EMQX_NAME: emqx
+      EMQX_NODE__COOKIE: ${EMQX_NODE__COOKIE}
     ports:
-      - "1883:1883"    # MQTT
-      - "8083:8083"    # MQTT/WebSocket
-      - "18083:18083"  # Dashboard
+      - "${OS_MQTT_TCP_PORT}:1883"
+      - "8883:8883"
+      - "8083:8083"
+      - "${OS_MQTT_WEBSOCKET_TSL_PORT}:8084"
+      - "18083:18083"
     volumes:
-      - emqx_data:/opt/emqx/data
-      - emqx_log:/opt/emqx/log
+      - ${VOLUMES_PATH}/emqx/data:/opt/emqx/data
+      - ${VOLUMES_PATH}/emqx/log:/opt/emqx/log
+      - ${VOLUMES_PATH}/emqx/config/emqx.conf:/opt/emqx/etc/emqx.conf
     networks:
       - supos-bedrock
     healthcheck:
@@ -42,14 +83,232 @@ services:
       timeout: 5s
       retries: 5
 
+  # ==================== AUTHENTICATION ====================
+
+  keycloak:
+    image: keycloak/keycloak:26.0
+    container_name: supos-keycloak
+    restart: unless-stopped
+    user: root
+    environment:
+      KC_SSL_REQUIRED: none
+      KC_PROXY: passthrough
+      KC_HOSTNAME: ${ENTRANCE_DOMAIN}
+      KC_FRONTEND_URL: ${ENTRANCE_PROTOCOL}://${ENTRANCE_DOMAIN}:${ENTRANCE_PORT}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+      KC_COOKIE_SECURE: false
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgresql:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_POOL_INITIAL_SIZE: 2
+      KC_DB_POOL_MIN_SIZE: 2
+      KC_DB_POOL_MAX_SIZE: 4
+      KC_HEALTH_ENABLED: true
+      KC_FEATURES: token-exchange
+    ports:
+      - "8081:8080"
+    volumes:
+      - ${VOLUMES_PATH}/keycloak/data:/opt/keycloak/data
+      - ${VOLUMES_PATH}/keycloak/theme/keycloak.v2:/opt/keycloak/themes/wenhao
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    command: start-dev --hostname ${ENTRANCE_PROTOCOL}://${ENTRANCE_DOMAIN}:${ENTRANCE_PORT}/keycloak/home/auth --proxy-headers forwarded
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+    networks:
+      - supos-bedrock
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 512M
+
+  # ==================== FLOW AUTOMATION ====================
+
+  nodered:
+    image: nodered/node-red:4.0.8-22
+    container_name: supos-nodered
+    restart: unless-stopped
+    user: root
+    environment:
+      FLOWS: /data/flows.json
+      USE_ALIAS_AS_TOPIC: ${USE_ALIAS_PATH_AS_TOPIC}
+      TIMESTAMP_NAME: timeStamp
+      QUALITY_NAME: quality
+      TZ: UTC
+      OS_LANG: ${LANGUAGE}
+      NODE_OPTIONS: --openssl-legacy-provider
+      NODE_HTTP_API_PREFIX: /nodered-api
+    ports:
+      - "1880:1880"
+    volumes:
+      - ${VOLUMES_PATH}/node-red:/data
+    depends_on:
+      - emqx
+    networks:
+      - supos-bedrock
+
+  eventflow:
+    image: nodered/node-red:4.0.8-22
+    container_name: supos-eventflow
+    restart: unless-stopped
+    user: root
+    environment:
+      FLOWS: /data/flows.json
+      USE_ALIAS_AS_TOPIC: ${USE_ALIAS_PATH_AS_TOPIC}
+      QUALITY_NAME: status
+      TIMESTAMP_NAME: timeStamp
+      TZ: UTC
+      OS_LANG: ${LANGUAGE}
+      NODE_OPTIONS: --openssl-legacy-provider
+      NODE_HTTP_API_PREFIX: /eventflow-api
+    ports:
+      - "1889:1889"
+    volumes:
+      - ${VOLUMES_PATH}/eventflow:/data
+    networks:
+      - supos-bedrock
+
+  # ==================== API GATEWAY ====================
+
+  kong:
+    image: kong:3.9.0
+    container_name: supos-kong
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: postgresql
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD}
+      KONG_PG_USER: postgres
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
+      KONG_PLUGINS: bundled
+      KONG_PG_POOL_SIZE: 2
+      KONG_LOG_LEVEL: error
+      KONG_WORKER_STATE_UPDATE_FREQUENCY: 30
+      KONG_DB_CACHE_TTL: 600
+      KONG_NGINX_WORKER_PROCESSES: 2
+    ports:
+      - "${ENTRANCE_PORT}:8000"
+      - "8443:8443"
+      - "8001:8001"
+    volumes:
+      - ${VOLUMES_PATH}/kong/kong_config.yml:/etc/kong/kong_config.yml
+    depends_on:
+      - postgresql
+      - keycloak
+    command: >
+      sh -c "kong migrations bootstrap &&
+             kong config db_import /etc/kong/kong_config.yml &&
+             kong start"
+    networks:
+      - supos-bedrock
+
+  konga:
+    image: suposce/konga:1.0.0
+    container_name: supos-konga
+    restart: unless-stopped
+    environment:
+      NO_AUTH: "true"
+      KONGA_SEED_KONG_NODE_DATA_SOURCE_FILE: /node.data
+    ports:
+      - "1337:1337"
+    volumes:
+      - ${VOLUMES_PATH}/konga/db:/app/kongadata
+      - ${VOLUMES_PATH}/konga/node.data:/node.data
+    networks:
+      - supos-bedrock
+
+  # ==================== SUPOS PLATFORM ====================
+
+  frontend:
+    image: suposce/supos-ce-platform:1.0.11-T2
+    container_name: supos-frontend
+    restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_MODEL: ${OPENAI_API_MODEL}
+      REACT_APP_OS_LANG: ${LANGUAGE}
+    ports:
+      - "3010:3000"
+      - "4000:4000"
+      - "3001:3001"
+      - "3002:3002"
+    volumes:
+      - plugin_front:/app/plugins-build
+    networks:
+      - supos-bedrock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  backend:
+    image: suposce/supos-ce-backend:1.0.11-T3
+    container_name: supos-backend
+    restart: unless-stopped
+    environment:
+      TZ: UTC
+      MEM_OPTS: -Xms512m -Xmx2g -Duser.timezone=UTC -Dfile.encoding=utf-8
+      JAVA_OPTS: -server -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/logs -Delk.enabled=false -Dpg.jdbcUrl=jdbc:postgresql://tsdb:5432/postgres
+      ENV_DB_HOST: postgresql
+      ENV_DB_PORT: 5432
+      NODE_RED_HOST: nodered
+      NODE_RED_PORT: 1880
+      SYS_OS_VERSION: ${OS_VERSION}
+      SYS_OS_LANG: ${LANGUAGE}
+      SYS_OS_AUTH_ENABLE: ${OS_AUTH_ENABLE}
+      SYS_OS_LLM_TYPE: ${OS_LLM_TYPE}
+      SYS_OS_APP_TITLE: ${OS_NAME}
+      SYS_OS_MQTT_TCP_PORT: ${OS_MQTT_TCP_PORT}
+      SYS_OS_MQTT_WEBSOCKET_TSL_PORT: ${OS_MQTT_WEBSOCKET_TSL_PORT}
+      SYS_OS_LOGIN_PATH: ${OS_LOGIN_PATH}
+      SYS_OS_PLATFORM_TYPE: ${OS_PLATFORM_TYPE}
+      SYS_OS_ENTRANCE_URL: ${ENTRANCE_PROTOCOL}://${ENTRANCE_DOMAIN}:${ENTRANCE_PORT}
+      SYS_OS_USE_ALIAS_PATH_AS_TOPIC: ${USE_ALIAS_PATH_AS_TOPIC}
+      SYS_OS_LAZY_TREE: ${LAZY_TREE}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
+      OAUTH_SUPOS_HOME: ${OAUTH_SUPOS_HOME}
+      OAUTH_REALM: ${OAUTH_REALM}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH_ISSUER_URI: ${OAUTH_ISSUER_URI}
+      ENABLE_CHAT2DB: ${ENABLE_CHAT2DB}
+    ports:
+      - "8091:8080"
+    volumes:
+      - ${VOLUMES_PATH}/backend/apps:/data/apps
+      - ${VOLUMES_PATH}/backend/third-apps:/data/third-apps
+      - ${VOLUMES_PATH}/backend/uns:/data/uns
+      - ${VOLUMES_PATH}/backend/system:/data/system
+      - ${VOLUMES_PATH}/backend/log:/logs
+      - plugin_front:/data/plugins-frontend
+    depends_on:
+      - postgresql
+      - tsdb
+      - emqx
+      - nodered
+      - keycloak
+    networks:
+      - supos-bedrock
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+        reservations:
+          memory: 1g
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 networks:
   supos-bedrock:
     external: true
 
 volumes:
-  postgres_data:
-    name: supos_postgres_data
-  emqx_data:
-    name: supos_emqx_data
-  emqx_log:
-    name: supos_emqx_log
+  plugin_front:

@@ -9,136 +9,315 @@
 <body class="bg-gray-50">
     <div class="min-h-screen p-4">
         <div class="max-w-4xl mx-auto">
-            <!-- Header -->
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">supOS Bedrock</h1>
                 <p class="text-gray-600 mt-1">Deployment orchestration dashboard</p>
             </div>
 
-            <!-- Master Container Status -->
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-xl font-semibold text-gray-900 mb-2">Master Container</h2>
-                        <p class="text-gray-600">Orchestration control plane</p>
+            <!-- Install Screen -->
+            <div id="install-screen" class="hidden">
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <div class="text-center mb-6">
+                        <svg class="w-16 h-16 mx-auto text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                        </svg>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Install supOS-CE</h2>
+                        <p class="text-gray-600">Configure and start the supOS Community Edition stack</p>
                     </div>
-                    <span id="master-status" class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                        Running
-                    </span>
+
+                    <div id="install-button-container" class="mb-6">
+                        <button id="install-btn" onclick="installSupOS()" class="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 font-semibold text-lg transition-colors">
+                            Install supOS-CE
+                        </button>
+                    </div>
+
+                    <div id="install-progress" class="hidden">
+                        <!-- Step Tracker -->
+                        <div class="mb-6 space-y-3">
+                            <div id="step-config" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-sm font-semibold text-gray-600">1</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-gray-900">Generate Configuration</p>
+                                    <p id="step-config-detail" class="text-sm text-gray-500">Creating .env file</p>
+                                </div>
+                                <div id="step-config-status" class="text-gray-400 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div id="step-pull" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-50">
+                                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-sm font-semibold text-gray-600">2</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-gray-900">Pull Docker Images</p>
+                                    <p id="step-pull-detail" class="text-sm text-gray-500">Waiting...</p>
+                                </div>
+                                <div id="step-pull-status" class="text-gray-400 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div id="step-start" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-50">
+                                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-sm font-semibold text-gray-600">3</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-gray-900">Start Services</p>
+                                    <p id="step-start-detail" class="text-sm text-gray-500">Waiting...</p>
+                                </div>
+                                <div id="step-start-status" class="text-gray-400 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <details class="mt-4">
+                            <summary class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 mb-2">
+                                Show detailed logs
+                            </summary>
+                            <div class="bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto font-mono text-xs">
+                                <div id="install-logs" class="text-green-400 space-y-1"></div>
+                            </div>
+                        </details>
+                    </div>
                 </div>
             </div>
 
-            <!-- Services Card -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900">Service Stack</h2>
-                    <button onclick="refreshStatus()" class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Refresh
-                    </button>
-                </div>
-
-                <!-- Services List -->
-                <div id="services" class="space-y-3 mb-6">
-                    <div class="flex items-center justify-center py-8 text-gray-500">
-                        <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Loading services...
+            <!-- Monitoring Screen -->
+            <div id="monitoring-screen" class="hidden">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900 mb-2">Master Container</h2>
+                            <p class="text-gray-600">Orchestration control plane</p>
+                        </div>
+                        <span id="master-status" class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                            Running
+                        </span>
                     </div>
                 </div>
 
-                <!-- Control Buttons -->
-                <div class="flex gap-3 pt-4 border-t border-gray-200">
-                    <button onclick="startServices()" class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 font-semibold transition-colors">
-                        Start Services
-                    </button>
-                    <button onclick="stopServices()" class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 font-semibold transition-colors">
-                        Stop Services
-                    </button>
-                </div>
-            </div>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900">supOS-CE Stack</h2>
+                            <p id="stack-status" class="text-gray-600 mt-1">Loading...</p>
+                        </div>
+                        <button onclick="refreshSupOSStatus()" class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
 
-            <!-- Footer Info -->
-            <div class="mt-6 text-center text-sm text-gray-500">
-                <p>Auto-refresh every 5 seconds</p>
+                    <div class="flex gap-3 pt-4 border-t border-gray-200">
+                        <button onclick="manageSupOS('start')" class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 font-semibold transition-colors">
+                            Start Services
+                        </button>
+                        <button onclick="manageSupOS('stop')" class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 font-semibold transition-colors">
+                            Stop Services
+                        </button>
+                        <button onclick="manageSupOS('restart')" class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-semibold transition-colors">
+                            Restart
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center text-sm text-gray-500">
+                    <p>Auto-refresh every 10 seconds</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        async function refreshStatus() {
+        let autoRefreshInterval;
+
+        async function checkInstallStatus() {
             try {
-                const res = await fetch('/api/status');
+                const res = await fetch('/api/supos/status');
                 const data = await res.json();
-                
-                // Update services list
-                const servicesList = document.getElementById('services');
-                servicesList.innerHTML = data.services.map(service => {
-                    const isRunning = service.status === 'running';
-                    const statusColor = isRunning ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-                    const iconColor = isRunning ? 'text-green-600' : 'text-gray-400';
-                    
-                    return `
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 ${isRunning ? 'bg-green-100' : 'bg-gray-100'} rounded-full flex items-center justify-center">
-                                    <svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-900 capitalize">${service.name}</p>
-                                    <p class="text-sm text-gray-600">${service.health}</p>
-                                </div>
-                            </div>
-                            <span class="px-3 py-1 ${statusColor} rounded-full text-sm font-semibold capitalize">
-                                ${service.status.replace('_', ' ')}
-                            </span>
-                        </div>
-                    `;
-                }).join('');
+
+                if (data.installed && data.configured) {
+                    showMonitoringScreen();
+                    updateStackStatus(data);
+                    startAutoRefresh();
+                } else {
+                    showInstallScreen();
+                }
+            } catch (error) {
+                console.error('Failed to check install status:', error);
+                showInstallScreen();
+            }
+        }
+
+        function showInstallScreen() {
+            document.getElementById('install-screen').classList.remove('hidden');
+            document.getElementById('monitoring-screen').classList.add('hidden');
+        }
+
+        function showMonitoringScreen() {
+            document.getElementById('install-screen').classList.add('hidden');
+            document.getElementById('monitoring-screen').classList.remove('hidden');
+        }
+
+        function updateStackStatus(data) {
+            const statusEl = document.getElementById('stack-status');
+            if (data.running) {
+                statusEl.textContent = `${data.running_count} of ${data.container_count} containers running`;
+                statusEl.className = 'text-green-600 mt-1 font-medium';
+            } else {
+                statusEl.textContent = 'Services not running';
+                statusEl.className = 'text-gray-600 mt-1';
+            }
+        }
+
+        async function refreshSupOSStatus() {
+            try {
+                const res = await fetch('/api/supos/status');
+                const data = await res.json();
+                updateStackStatus(data);
             } catch (error) {
                 console.error('Failed to refresh status:', error);
-                document.getElementById('services').innerHTML = `
-                    <div class="flex items-center justify-center py-8 text-red-600">
-                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                        </svg>
-                        Failed to load services
-                    </div>
-                `;
             }
         }
 
-        async function startServices() {
-            try {
-                await fetch('/api/services/start', { method: 'POST' });
-                setTimeout(refreshStatus, 2000);
-            } catch (error) {
-                console.error('Failed to start services:', error);
-                alert('Failed to start services. Check logs.');
-            }
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(refreshSupOSStatus, 10000);
         }
 
-        async function stopServices() {
-            if (!confirm('Stop all services?')) return;
-            
-            try {
-                await fetch('/api/services/stop', { method: 'POST' });
-                setTimeout(refreshStatus, 2000);
-            } catch (error) {
-                console.error('Failed to stop services:', error);
-                alert('Failed to stop services. Check logs.');
-            }
+        async function installSupOS() {
+            const btnContainer = document.getElementById('install-button-container');
+            const progress = document.getElementById('install-progress');
+            const logs = document.getElementById('install-logs');
+
+            btnContainer.classList.add('hidden');
+            progress.classList.remove('hidden');
+
+            let currentStep = 'config';
+            const imageProgress = {};
+
+            const eventSource = new EventSource('/api/supos/install');
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    if (data.type === 'complete') {
+                        eventSource.close();
+                        markStepComplete('start', 'Services started');
+                        setTimeout(() => checkInstallStatus(), 2000);
+                        return;
+                    }
+
+                    if (data.type === 'error') {
+                        eventSource.close();
+                        markStepError(currentStep, data.message);
+                        return;
+                    }
+
+                    const msg = data.message || '';
+
+                    // Phase detection
+                    if (msg.includes('Generating') || msg.includes('Configuration')) {
+                        if (currentStep !== 'config') {
+                            currentStep = 'config';
+                            markStepActive('config');
+                        }
+                    } else if (msg.includes('Pulling') || msg.includes('Downloading')) {
+                        if (currentStep === 'config') {
+                            markStepComplete('config', 'Configuration ready');
+                            markStepActive('pull');
+                            currentStep = 'pull';
+                        }
+                    } else if (msg.includes('Creating') || msg.includes('Starting') || msg.includes('Created')) {
+                        if (currentStep === 'pull') {
+                            markStepComplete('pull', 'Images pulled');
+                            markStepActive('start');
+                            currentStep = 'start';
+                        }
+                    }
+
+                    // Aggregate download progress (hide spam)
+                    if (msg.includes('Downloading') || msg.includes('Pulling')) {
+                        const match = msg.match(/(\w+)\s+(Downloading|Pulling)/);
+                        if (match) {
+                            const imageId = match[1];
+                            imageProgress[imageId] = true;
+                            const count = Object.keys(imageProgress).length;
+                            document.getElementById('step-pull-detail').textContent = `Pulling ${count} image(s)...`;
+                            return; // Don't add to logs
+                        }
+                    }
+
+                    // Success markers
+                    if (data.type === 'success' && msg.includes('Configuration')) {
+                        markStepComplete('config', 'Configuration ready');
+                    }
+
+                    // Add to detailed logs
+                    const logLine = document.createElement('div');
+                    const colors = {
+                        'info': 'text-blue-400',
+                        'success': 'text-green-400',
+                        'error': 'text-red-400',
+                        'log': 'text-gray-300'
+                    };
+                    logLine.className = colors[data.type] || 'text-gray-300';
+                    logLine.textContent = `> ${msg}`;
+                    logs.appendChild(logLine);
+                    logs.parentElement.scrollTop = logs.parentElement.scrollHeight;
+
+                } catch (e) {
+                    console.error('Parse error:', e);
+                }
+            };
+
+            eventSource.onerror = function() {
+                eventSource.close();
+                markStepError(currentStep, 'Connection lost');
+            };
         }
 
-        // Initial load and auto-refresh
-        refreshStatus();
-        setInterval(refreshStatus, 5000);
+        function markStepActive(step) {
+            const el = document.getElementById(`step-${step}`);
+            el.classList.remove('opacity-50');
+            const icon = document.getElementById(`step-${step}-status`);
+            icon.innerHTML = `<svg class="animate-spin w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+        }
+
+        function markStepComplete(step, detail) {
+            const el = document.getElementById(`step-${step}`);
+            el.classList.remove('opacity-50');
+            const icon = document.getElementById(`step-${step}-status`);
+            icon.innerHTML = `<svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`;
+            if (detail) document.getElementById(`step-${step}-detail`).textContent = detail;
+        }
+
+        function markStepError(step, detail) {
+            const el = document.getElementById(`step-${step}`);
+            el.classList.remove('opacity-50');
+            const icon = document.getElementById(`step-${step}-status`);
+            icon.innerHTML = `<svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>`;
+            if (detail) document.getElementById(`step-${step}-detail`).textContent = detail;
+        }
+
+        async function manageSupOS(action) {
+            alert(`${action} will be implemented next`);
+        }
+
+        checkInstallStatus();
     </script>
 </body>
 </html>

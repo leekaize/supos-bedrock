@@ -17,8 +17,15 @@ DEFAULT_VOLUMES_PATH = "/volumes/supos/data"
 
 
 def is_first_run():
-    """Check if this is first run (no config exists)."""
-    return not os.path.exists(CONFIG_FILE)
+    """Check if this is first run (no config or setup incomplete)."""
+    if not os.path.exists(CONFIG_FILE):
+        return True
+    try:
+        with open(CONFIG_FILE, 'r') as f:
+            config = json.load(f)
+            return not config.get("setup_complete", False)
+    except:
+        return True  # Corrupted/unreadable = first run
 
 
 def load_config():
@@ -241,3 +248,57 @@ def complete_setup(config):
     config["setup_complete"] = True
     save_config(config)
     return True
+
+
+def get_nested_value(data, path):
+    """
+    Get value from nested dict using dot notation.
+    Example: get_nested_value(config, 'network.domain')
+    """
+    keys = path.split('.')
+    value = data
+    for key in keys:
+        value = value.get(key, '')
+    return value
+
+
+def generate_env_file(config, template_path='/services/.env.template', output_path='/services/.env'):
+    """
+    Generate .env file from config.json using template.
+    Returns: (bool, str) - (success, message)
+    """
+    try:
+        # Read template
+        with open(template_path, 'r') as f:
+            template = f.read()
+        
+        # Replace all {{key.path}} with config values
+        import re
+        pattern = r'\{\{([^}]+)\}\}'
+        
+        def replace_placeholder(match):
+            path = match.group(1).strip()
+            value = get_nested_value(config, path)
+            
+            # Convert boolean to lowercase string for shell
+            if isinstance(value, bool):
+                return str(value).lower()
+            
+            # Empty string for None
+            if value is None:
+                return ''
+            
+            return str(value)
+        
+        env_content = re.sub(pattern, replace_placeholder, template)
+        
+        # Write .env file
+        with open(output_path, 'w') as f:
+            f.write(env_content)
+        
+        return True, f"Generated {output_path} successfully"
+        
+    except FileNotFoundError as e:
+        return False, f"Template not found: {e}"
+    except Exception as e:
+        return False, f"Failed to generate .env: {e}"

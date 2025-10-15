@@ -10,10 +10,10 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - bedrock_master_config:/app/config
-      - ./services:/services:ro
+      - ./services:/services
+      - ./supOS-CE:/supos-ce  # ADD THIS LINE
     environment:
       - FLASK_ENV=production
-      - SERVICES_COMPOSE_PATH=/services/docker-compose.yml
     networks:
       - bedrock-network
 

@@ -1,0 +1,3 @@
+[submodule "supOS-CE"]
+	path = supOS-CE
+	url = https://github.com/FREEZONEX/supOS-CE.git
