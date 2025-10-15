@@ -91,3 +91,66 @@ URL: http://localhost:18083
 Login: admin / public
 
 Expected: Shows 0 clients. Publish/subscribe works.
+
+## Day 3 Onwards: Development
+
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install pytest pytest-mock
+
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_setup_wizard.py -v
+
+# With coverage
+pytest tests/ --cov=master --cov-report=html
+```
+
+### Development Workflow
+
+```bash
+# 1. Make changes to master/*
+nano master/app.py
+
+# 2. Rebuild master container
+docker compose build master
+
+# 3. Restart
+docker compose restart master
+
+# 4. View logs
+docker logs -f supos-bedrock-master
+
+# 5. Test in browser
+open http://localhost:8080
+```
+
+### Troubleshooting
+
+**Setup wizard loops:**
+```bash
+# Check config flag
+docker exec supos-bedrock-master python -c "
+import setup_wizard
+print(setup_wizard.is_first_run())
+"
+# Should be False after setup complete
+```
+
+**Install button doesn't show:**
+```bash
+# Check API status
+curl http://localhost:8080/api/supos/status | jq
+
+# Expected: {"installed": true, "configured": false}
+```
+
+**Volume errors during install:**
+```bash
+# Volumes created automatically, but verify path
+docker exec supos-bedrock-master ls /volumes/supos/data
+```

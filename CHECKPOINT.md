@@ -73,49 +73,56 @@
 ### Morning Checkpoint (0800)
 **Goal:** Update notifications + first-run setup
 **Tasks:**
-1. [ ] Add image version checker to master/app.py
-2. [ ] Create first-run setup wizard (user creation UI)
-3. [ ] Add update notification banner to dashboard
+1. [x] Add first-run setup wizard
+2. [x] Implement .env auto-generation
+3. [x] Integrate supOS-CE orchestration
+
+### Evening Log (2030)
+**Completed:**
+- **First-run setup wizard:** 4-step configuration (validation, admin, network, confirmation)
+- **Setup logic fixed:** Check `setup_complete` flag instead of file existence
+- **.env generation:** Template-based system generates 48 environment variables from config.json
+- **supOS-CE integration:** Added as git submodule, mounted to master container
+- **Install workflow:** Configure + volume creation + docker-compose up streaming logs
+- **Volume auto-creation:** Master creates all required directories before service start
+- **Dashboard dual-mode:** Install screen (not configured) vs monitoring screen (configured)
+- **Progress tracking:** 3-step install process with phase detection
+- **Tests:** 29 unit tests passing for setup_wizard.py
+
+**Architecture decisions:**
+- Submodule approach eliminates 500MB clone on every test
+- Config stored in volume, persists across container restarts
+- .env regenerated on master boot if config exists
+- Container count determines "configured" state (more reliable than .env check)
+
+**Blockers:**
+- None (all resolved during session)
+
+**Tomorrow Priority:**
+- Service control routes (start/stop/restart)
+- Optional service profiles (docker-compose profiles)
+- Enhanced install progress (substep breakdown)
+- Error handling + logs viewer
+
+**Commit:**
+```
+afdb2771eeaf183028dbcfee41390ca81f6f5f6e
+4087bc83da717754840cf3994ec5569dd144775d
+```
+
+---
+
+## Day 4 - 2025-10-16 (Thu)
+
+### Morning Checkpoint
+**Goal:** Service controls + optional profiles
+**Tasks:**
+1. [ ] Implement start/stop/restart routes
+2. [ ] Add docker-compose profiles for optional services
+3. [ ] Enhanced install progress with substeps
 
 ### Evening Log
 **Completed:**
 **Blockers:**
 **Tomorrow Priority:**
 **Commit:**
-
----
-
-## Checkpoint Template
-
-Copy for each day:
-
-```markdown
-## Day X - YYYY-MM-DD (Day)
-
-### Morning Checkpoint (HHMM)
-**Goal:** [One sentence]
-**Tasks:**
-1. [ ] 
-2. [ ] 
-3. [ ] 
-
-### Evening Log (HHMM)
-**Completed:**
-- 
-
-**Blockers:**
-- 
-
-**Tomorrow Priority:**
-- 
-
-**Commit:**
--
-
-**Phase Completion Criteria:**
-- [ ] Day 14: One-command deployment works
-- [ ] Day 14: Web UI shows service status
-- [ ] Day 14: Basic lifecycle controls
-- [ ] Day 14: Documentation complete
-- [ ] Day 14: Demo video recorded
-- [ ] Day 14: Hackathon submission ready
